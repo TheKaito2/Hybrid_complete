@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard - Smart Checkout</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div>
+                    <h1>Analytics Dashboard</h1>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Business Intelligence</span>
+                </div>
+                <nav class="header-nav" style="display: flex; gap: 1rem;">
+                    <button class="nav-btn" onclick="window.location.href='/'">
+                    <button class="nav-btn" onclick="window.location.href='/cart'">
+                        <i class="fas fa-shopping-cart"></i> Cart
+                    </button>
+                    
+                        <i class="fas fa-boxes"></i> Inventory
+                    </button>
+                    <button class="nav-btn" onclick="window.location.href='/checkout'">
+                        <i class="fas fa-camera"></i> Checkout
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card fade-in">
+                    <div>
+                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 1rem;">Total Revenue</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="totalRevenue">฿0</div>
+                        <div style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.875rem; color: var(--success);" id="growthContainer">
+                            <i class="fas fa-arrow-up"></i>
+                            <span id="revenueGrowth">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card fade-in" style="animation-delay: 0.1s">
+                    <div>
+                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 1rem;">Today's Sales</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="todaySales">0</div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">transactions</div>
+                    </div>
+                </div>
+
+                <div class="stat-card fade-in" style="animation-delay: 0.2s">
+                    <div>
+                        <h3 style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 1rem;">Average Order</h3>
+                        <div style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;" id="avgOrder">฿0</div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">per transaction</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">🏆 Best Sellers Ranking</h3>
+                    <div id="bestSellersRanking" class="best-sellers-list"></div>
+                </div>
+
+                <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">Recent Transactions</h3>
+                    <div id="recentTransactions" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

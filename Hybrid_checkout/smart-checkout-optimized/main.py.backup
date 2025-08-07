@@ -1,0 +1,222 @@
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import uvicorn
+import json
+import asyncio
+from datetime import datetime
+import os
+from pathlib import Path
+import base64
+import cv2
+import numpy as np
+import qrcode
+from io import BytesIO
+import uuid
+
+from services.detection_service import DetectionService
+from services.json_db import JsonDatabase
+
+# Initialize services
+db = JsonDatabase()
+detection_service = DetectionService(db)
+
+# WebSocket connections manager
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except:
+                pass
+
+manager = ConnectionManager()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await detection_service.initialize()
+    yield
+
+app = FastAPI(title="Smart Checkout System", version="2.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API Routes
+@app.get("/api/products")
+async def get_products():
+    return db.get_products()
+
+@app.post("/api/restock/{product_id}")
+async def restock_product(product_id: str, quantity: int):
+    success = db.update_stock(product_id, quantity, operation="add")
+    if success:
+        await manager.broadcast({"type": "stock_update", "product_id": product_id})
+        return {"message": "Product restocked successfully"}
+    return JSONResponse(status_code=400, content={"error": "Failed to restock"})
+
+@app.post("/api/create-payment")
+async def create_payment(cart_data: dict):
+    payment_id = str(uuid.uuid4())
+    subtotal = 0
+    items = []
+    
+    for item in cart_data.get("items", []):
+        product = db.get_product(item["product_id"])
+        if not product:
+            return JSONResponse(status_code=400, content={"error": f"Product {item['product_id']} not found"})
+            
+        if product["stock"] < item["quantity"]:
+            return JSONResponse(status_code=400, content={
+                "error": f"Insufficient stock for {product['name']}. Available: {product['stock']}"
+            })
+        
+        item_total = product["price"] * item["quantity"]
+        subtotal += item_total
+        
+        items.append({
+            "product_id": item["product_id"],
+            "product_name": product["name"],
+            "quantity": item["quantity"],
+            "price": product["price"],
+            "total": item_total
+        })
+    
+    settings = db.get_settings()
+    tax_rate = settings.get("tax_rate", 0.07)
+    tax = subtotal * tax_rate
+    total = subtotal + tax
+    
+    # Generate QR code
+    qr_data = f"PAYMENT|{total:.2f}|{payment_id}"
+    
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    
+    img = qr.make_image(fill_color="black", back_color="white")
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+    
+    pending_payment = {
+        "payment_id": payment_id,
+        "timestamp": datetime.now().isoformat(),
+        "items": items,
+        "subtotal": subtotal,
+        "tax": tax,
+        "total": total,
+        "status": "pending",
+        "qr_code": f"data:image/png;base64,{qr_base64}"
+    }
+    
+    db.add_pending_payment(payment_id, pending_payment)
+    return pending_payment
+
+@app.post("/api/confirm-payment/{payment_id}")
+async def confirm_payment(payment_id: str):
+    pending_payment = db.get_pending_payment(payment_id)
+    
+    if not pending_payment:
+        return JSONResponse(status_code=404, content={"error": "Payment not found"})
+    
+    if pending_payment["status"] != "pending":
+        return JSONResponse(status_code=400, content={"error": "Payment already processed"})
+    
+    sale = db.process_pending_payment(payment_id)
+    
+    if sale:
+        await manager.broadcast({"type": "sale_completed", "sale": sale})
+        return sale
+    
+    return JSONResponse(status_code=400, content={"error": "Failed to process payment"})
+
+@app.get("/api/sales")
+async def get_sales(limit: int = 50):
+    return db.get_sales(limit)
+
+@app.get("/api/analytics")
+async def get_analytics():
+    return db.get_analytics()
+
+@app.get("/api/theme")
+async def get_theme():
+    return {"theme": db.get_theme()}
+
+@app.post("/api/theme")
+async def set_theme(theme_data: dict):
+    theme = theme_data.get("theme", "light")
+    if theme in ["light", "dark"]:
+        db.set_theme(theme)
+        await manager.broadcast({"type": "theme_changed", "theme": theme})
+        return {"theme": theme}
+    return JSONResponse(status_code=400, content={"error": "Invalid theme"})
+
+@app.websocket("/ws/detection")
+async def websocket_detection(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            
+            if data.get("type") == "frame":
+                frame_data = data.get("frame")
+                if frame_data:
+                    img_data = base64.b64decode(frame_data.split(',')[1])
+                    nparr = np.frombuffer(img_data, np.uint8)
+                    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    
+                    detections = await detection_service.detect_frame(frame)
+                    
+                    await websocket.send_json({
+                        "type": "detections",
+                        "data": detections
+                    })
+            
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
+# Static file serving
+@app.get("/")
+async def root():
+    return FileResponse("static/inventory.html")
+
+@app.get("/checkout")
+async def checkout_page():
+    return FileResponse("static/checkout.html")
+
+@app.get("/admin")
+async def admin_page():
+    return FileResponse("static/admin.html")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/models", StaticFiles(directory="models"), name="models")
+
+if __name__ == "__main__":
+    print("\n" + "="*60)
+    print("🚀 SMART CHECKOUT SYSTEM v2.0 - Optimized")
+    print("="*60)
+    print("\n📍 Access Points:")
+    print("   Inventory: http://localhost:8000")
+    print("   Checkout:  http://localhost:8000/checkout")
+    print("   Analytics: http://localhost:8000/admin")
+    print("="*60 + "\n")
+    
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

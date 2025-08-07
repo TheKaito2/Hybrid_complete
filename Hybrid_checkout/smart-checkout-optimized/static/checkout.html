@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout Scanner - Smart Checkout</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <button class="nav-btn" onclick="window.location.href='/'">
+                    <i class="fas fa-arrow-left"></i> Back to Inventory
+                </button>
+                <h1>Smart Checkout Scanner</h1>
+                <div class="header-nav"></div>
+            </div>
+        </header>
+
+        <div class="checkout-layout">
+            <div>
+                <div class="camera-container">
+                    <video id="cameraVideo" autoplay playsinline></video>
+                    <canvas id="detectionCanvas"></canvas>
+                    <div style="position: absolute; bottom: 1rem; left: 1rem; right: 1rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.7); padding: 0.75rem 1rem; border-radius: 0.5rem;">
+                        <button id="toggleCamera" class="btn btn-primary">
+                            <i class="fas fa-video"></i>
+                        </button>
+                        <span style="color: white; font-size: 0.875rem;">
+                            <i class="fas fa-circle" style="font-size: 0.5rem; color: var(--success);"></i>
+                            <span id="detectionText">Initializing...</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; margin-top: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">Detected Products</h3>
+                    <div id="detectedItems" style="min-height: 150px; max-height: 300px; overflow-y: auto; margin-bottom: 1rem;">
+                        <p style="text-align: center; color: var(--text-secondary);">Position products in camera view</p>
+                    </div>
+                    <button id="addToCartBtn" class="btn btn-primary" style="width: 100%;" disabled>
+                        <i class="fas fa-cart-plus"></i> Add All to Cart
+                    </button>
+                </div>
+            </div>
+
+            <div class="cart-section">
+                <h2>Shopping Cart</h2>
+                <div id="cartItems" style="min-height: 200px; max-height: 400px; overflow-y: auto;">
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <p>Your cart is empty</p>
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin: 1rem 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                        <span>Subtotal</span>
+                        <span id="subtotal">฿0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                        <span>Tax (7%)</span>
+                        <span id="tax">฿0.00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 1.125rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+                        <span>Total</span>
+                        <span id="total">฿0.00</span>
+                    </div>
+                </div>
+                
+                <button id="checkoutBtn" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1rem;" disabled>
+                    <i class="fas fa-qrcode"></i> Show QR Code to Pay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="qrModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <h2>Scan to Pay</h2>
+            <div class="qr-container">
+                <img id="qrImage" src="" alt="Payment QR Code">
+            </div>
+            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+                <p>Total Amount</p>
+                <div class="payment-amount" id="paymentAmount">฿0.00</div>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 1rem 0;">
+                <i class="fas fa-info-circle"></i> Scan this QR code with your banking app to pay
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="cancelPayment()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmPaymentComplete()">
+                    <i class="fas fa-check"></i> Payment Complete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 4rem; color: var(--success); margin-bottom: 1rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Payment Successful!</h2>
+            <p id="receiptNumber" style="color: var(--text-secondary); margin: 1rem 0;"></p>
+            <button class="btn btn-primary" onclick="resetCheckout()">New Transaction</button>
+        </div>
+    </div>
+
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/checkout.js"></script>
+</body>
+</html>

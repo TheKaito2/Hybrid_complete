@@ -1,0 +1,16 @@
+# Core dependencies
+ultralytics>=8.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# UI framework
+PyQt5>=5.15.0
+
+# Threading and async
+# (included in Python standard library)
+
+# JSON and data handling
+# (included in Python standard library)
+
+# Logging
+# (included in Python standard library)

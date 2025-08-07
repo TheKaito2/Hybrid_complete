@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - Smart Checkout</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .scanner-status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            box-shadow: var(--shadow-md);
+            z-index: 100;
+            min-width: 250px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+        
+        .status-indicator.connected {
+            background: var(--success);
+        }
+        
+        .status-indicator.disconnected {
+            background: var(--danger);
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .cart-item-enter {
+            animation: itemEnter 0.4s ease-out;
+        }
+        
+        @keyframes itemEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            display: none;
+            z-index: 1000;
+            animation: notificationSlide 0.3s ease-out;
+        }
+        
+        @keyframes notificationSlide {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div>
+                    <h1>
+                        <i class="fas fa-shopping-cart"></i> Shopping Cart
+                    </h1>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                        Items from PyQt Scanner • Real-time sync enabled
+                    </span>
+                </div>
+                <nav class="header-nav" style="display: flex; gap: 1rem;">
+                    <button class="nav-btn" onclick="window.location.href='/'">
+                        <i class="fas fa-boxes"></i> Inventory
+                    </button>
+                    <button class="nav-btn" onclick="window.location.href='/admin'">
+                        <i class="fas fa-chart-line"></i> Analytics
+                    </button>
+                    <button class="theme-toggle" onclick="themeManager.toggle()">
+                        <div class="theme-toggle-slider">☀️</div>
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Quick Stats Bar -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="stat-card fade-in" style="animation-delay: 0s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 2rem;">📦</div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="statItems">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Total Items</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in" style="animation-delay: 0.1s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 2rem;">🛍️</div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="statUnique">0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Unique Products</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in" style="animation-delay: 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 2rem;">💰</div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="statSubtotal">฿0</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Subtotal</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stat-card fade-in" style="animation-delay: 0.3s;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="font-size: 2rem;">⏱️</div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="statTime">--:--</div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Last Update</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cart Actions Bar -->
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin-bottom: 0.5rem;">
+                            <i class="fas fa-barcode"></i> Scanner Integration
+                        </h2>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem;">
+                            <span class="status-indicator connected"></span>
+                            PyQt Scanner is ready • Items appear here automatically
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button class="btn btn-secondary" onclick="cartManager.refreshCart()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button id="clearCartBtn" class="btn btn-secondary" onclick="clearCart()">
+                            <i class="fas fa-trash"></i> Clear Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+                <!-- Cart Items -->
+                <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 1rem;">
+                        <h3>
+                            <i class="fas fa-list"></i> Cart Items
+                            <span id="itemCount" style="background: var(--primary); color: white; padding: 0.25rem 0.5rem; border-radius: 1rem; font-size: 0.75rem; margin-left: 0.5rem;">0</span>
+                        </h3>
+                    </div>
+                    
+                    <div id="cartItems" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                        <div class="empty-cart" style="text-align: center; padding: 4rem; color: var(--text-secondary);">
+                            <i class="fas fa-shopping-cart" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <h3>Your cart is empty</h3>
+                            <p style="font-size: 0.875rem; margin-top: 0.5rem;">
+                                Use the PyQt scanner to add products
+                            </p>
+                            <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem; text-align: left;">
+                                <h4 style="margin-bottom: 0.5rem;">📱 How to scan:</h4>
+                                <ol style="font-size: 0.875rem; margin-left: 1.5rem;">
+                                    <li>Open PyQt Scanner application</li>
+                                    <li>Click "📷 Scan!" button</li>
+                                    <li>Point at products</li>
+                                    <li>Click "🌐 Send to Web Cart"</li>
+                                    <li>Items will appear here instantly!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cart Summary & Payment -->
+                <div>
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1rem;">
+                        <h3 style="margin-bottom: 1rem;">
+                            <i class="fas fa-calculator"></i> Summary
+                        </h3>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                <span>Items:</span>
+                                <span id="summaryItems">0</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Subtotal:</span>
+                                <span id="subtotal">฿0.00</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; color: var(--text-secondary);">
+                                <span>Tax (7%):</span>
+                                <span id="tax">฿0.00</span>
+                            </div>
+                            <div style="border-top: 2px solid var(--border); padding-top: 0.5rem; margin-top: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; font-size: 1.5rem; font-weight: bold;">
+                                    <span>Total:</span>
+                                    <span id="total" style="color: var(--primary);">฿0.00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="checkoutBtn" class="btn btn-primary pulse-animation" style="width: 100%; padding: 1rem; font-size: 1.125rem;" onclick="proceedToCheckout()" disabled>
+                            <i class="fas fa-qrcode"></i> Generate QR Payment
+                        </button>
+                    </div>
+
+                    <!-- Payment Methods Info -->
+                    <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem;">
+                        <h4 style="margin-bottom: 1rem;">
+                            <i class="fas fa-credit-card"></i> Payment Methods
+                        </h4>
+                        <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                            <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+                                <i class="fas fa-qrcode" style="color: var(--primary);"></i> QR PromptPay
+                            </div>
+                            <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+                                <i class="fas fa-university" style="color: var(--primary);"></i> Bank Transfer
+                            </div>
+                            <div style="padding: 0.5rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+                                <i class="fas fa-mobile-alt" style="color: var(--primary);"></i> Mobile Banking
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scanner Status Widget -->
+    <div class="scanner-status">
+        <h4 style="margin-bottom: 0.5rem; font-size: 0.875rem;">
+            <i class="fas fa-desktop"></i> PyQt Scanner Status
+        </h4>
+        <div style="font-size: 0.875rem;">
+            <div style="margin-bottom: 0.25rem;">
+                <span class="status-indicator connected"></span>
+                <span id="scannerStatus">Ready</span>
+            </div>
+            <div style="color: var(--text-secondary);">
+                Last scan: <span id="lastScan">Never</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="notification" class="notification">
+        <i class="fas fa-check-circle"></i>
+        <span id="notificationText">Item added to cart!</span>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="qrModal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 500px;">
+            <h2>
+                <i class="fas fa-qrcode"></i> Scan to Pay
+            </h2>
+            
+            <div style="background: white; padding: 2rem; border-radius: 1rem; margin: 1.5rem 0;">
+                <img id="qrImage" src="" alt="Payment QR Code" style="max-width: 250px;">
+            </div>
+            
+            <div style="background: var(--bg-tertiary); padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Amount</p>
+                <div class="payment-amount" id="paymentAmount" style="font-size: 2.5rem; font-weight: bold; color: var(--primary);">฿0.00</div>
+            </div>
+            
+            <div style="display: grid; gap: 0.5rem; text-align: left; margin: 1.5rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 0.5rem;">
+                <p style="font-size: 0.875rem;">
+                    <i class="fas fa-mobile-alt" style="color: var(--primary);"></i>
+                    Open your banking app
+                </p>
+                <p style="font-size: 0.875rem;">
+                    <i class="fas fa-camera" style="color: var(--primary);"></i>
+                    Scan this QR code
+                </p>
+                <p style="font-size: 0.875rem;">
+                    <i class="fas fa-check" style="color: var(--primary);"></i>
+                    Confirm payment in app
+                </p>
+                <p style="font-size: 0.875rem;">
+                    <i class="fas fa-receipt" style="color: var(--primary);"></i>
+                    Click "Payment Complete" below
+                </p>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="btn btn-secondary" onclick="cancelPayment()" style="min-width: 120px;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" onclick="confirmPaymentComplete()" style="min-width: 150px;">
+                    <i class="fas fa-check"></i> Payment Complete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <div style="font-size: 5rem; color: var(--success); margin-bottom: 1rem;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 style="margin-bottom: 1rem;">Payment Successful!</h2>
+            <p id="receiptNumber" style="color: var(--text-secondary); margin: 1rem 0; font-size: 1.125rem;"></p>
+            
+            <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0;">
+                <p style="font-size: 0.875rem; color: var(--text-secondary);">
+                    <i class="fas fa-info-circle"></i> Stock has been automatically updated
+                </p>
+            </div>
+            
+            <button class="btn btn-primary" onclick="window.location.reload()" style="min-width: 200px; padding: 1rem;">
+                <i class="fas fa-shopping-cart"></i> Start New Cart
+            </button>
+        </div>
+    </div>
+
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/cart.js"></script>
+</body>
+</html>

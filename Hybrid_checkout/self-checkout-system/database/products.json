@@ -1,0 +1,179 @@
+{
+  "products": {
+    "chips": {
+      "lays_flat_original": {
+        "name": "Lay's Flat Original Flavor",
+        "price": 20.00,
+        "category": "chips",
+        "barcode": "8850718813681",
+        "stock": 50,
+        "image": "assets/products/lays_flat_original.jpg",
+        "description": "Original flavor potato chips",
+        "weight": "75g",
+        "yolo_class_name": "Lay's-Flat-Original-Flavor"
+      },
+      "lays_nori_seaweed": {
+        "name": "Lay's Nori Seaweed Flavor",
+        "price": 20.00,
+        "category": "chips",
+        "barcode": "8850718813698",
+        "stock": 45,
+        "image": "assets/products/lays_nori_seaweed.jpg",
+        "description": "Nori seaweed flavored potato chips",
+        "weight": "75g",
+        "yolo_class_name": "Lay's-Nori-Seaweed-Flavor"
+      },
+      "lays_ridged_original": {
+        "name": "Lay's Ridged Original Flavor",
+        "price": 25.00,
+        "category": "chips",
+        "barcode": "8850718813704",
+        "stock": 40,
+        "image": "assets/products/lays_ridged_original.jpg",
+        "description": "Ridged cut original flavor potato chips",
+        "weight": "75g",
+        "yolo_class_name": "Lay's-Ridged-Original-Flavor"
+      },
+      "snackjack_original": {
+        "name": "Snackjack Original Flavor",
+        "price": 15.00,
+        "category": "chips",
+        "barcode": "8851932306089",
+        "stock": 60,
+        "image": "assets/products/snackjack_original.jpg",
+        "description": "Original flavor popcorn",
+        "weight": "60g",
+        "yolo_class_name": "Snackjack-Original-Flavor"
+      },
+      "tasto_japanese_seaweed": {
+        "name": "Tasto Japanese Seaweed Flavor",
+        "price": 20.00,
+        "category": "chips",
+        "barcode": "8858702402248",
+        "stock": 35,
+        "image": "assets/products/tasto_japanese_seaweed.jpg",
+        "description": "Japanese seaweed flavored potato chips",
+        "weight": "80g",
+        "yolo_class_name": "Tasto-Japanese-Seaweed-Flavor"
+      },
+      "tasto_original": {
+        "name": "Tasto Original Flavor",
+        "price": 20.00,
+        "category": "chips",
+        "barcode": "8858702402231",
+        "stock": 40,
+        "image": "assets/products/tasto_original.jpg",
+        "description": "Original flavor potato chips",
+        "weight": "80g",
+        "yolo_class_name": "Tasto-Original-Flavor"
+      },
+      "enter": {
+        "name": "Enter Chips",
+        "price": 18.00,
+        "category": "chips",
+        "barcode": "8850123456789",
+        "stock": 50,
+        "image": "assets/products/enter.jpg",
+        "description": "Enter brand chips",
+        "weight": "70g",
+        "yolo_class_name": "Enter"
+      },
+      "atreus": {
+        "name": "Atreus Chips",
+        "price": 22.00,
+        "category": "chips",
+        "barcode": "8850987654321",
+        "stock": 30,
+        "image": "assets/products/atreus.jpg",
+        "description": "Atreus brand chips",
+        "weight": "85g",
+        "yolo_class_name": "Atreus"
+      }
+    },
+    "drinks": {
+      "cocacola_bottle": {
+        "name": "Coca-Cola Bottle",
+        "price": 18.00,
+        "category": "drinks",
+        "barcode": "8851959132012",
+        "stock": 100,
+        "image": "assets/products/cocacola_bottle.jpg",
+        "description": "Coca-Cola in glass bottle",
+        "volume": "300ml",
+        "yolo_class_name": "CocaCola-Bottle"
+      },
+      "cocacola_can": {
+        "name": "Coca-Cola Can",
+        "price": 14.00,
+        "category": "drinks",
+        "barcode": "8851959132029",
+        "stock": 150,
+        "image": "assets/products/cocacola_can.jpg",
+        "description": "Coca-Cola in aluminum can",
+        "volume": "325ml",
+        "yolo_class_name": "CocaCola-Can"
+      },
+      "crystal_water": {
+        "name": "Crystal Drinking Water",
+        "price": 7.00,
+        "category": "drinks",
+        "barcode": "8850228000015",
+        "stock": 200,
+        "image": "assets/products/crystal_water.jpg",
+        "description": "Pure drinking water",
+        "volume": "600ml",
+        "yolo_class_name": "Crystal-Water"
+      },
+      "fanta_fruitpunch": {
+        "name": "Fanta Fruit Punch Flavor",
+        "price": 14.00,
+        "category": "drinks",
+        "barcode": "8851959132067",
+        "stock": 80,
+        "image": "assets/products/fanta_fruitpunch.jpg",
+        "description": "Fanta fruit punch flavored soda",
+        "volume": "325ml",
+        "yolo_class_name": "Fanta-FruitPunch-Flavor"
+      },
+      "pepsi": {
+        "name": "Pepsi",
+        "price": 14.00,
+        "category": "drinks",
+        "barcode": "8858998580019",
+        "stock": 120,
+        "image": "assets/products/pepsi.jpg",
+        "description": "Pepsi cola",
+        "volume": "325ml",
+        "yolo_class_name": "Pepsi"
+      },
+      "sprite": {
+        "name": "Sprite",
+        "price": 14.00,
+        "category": "drinks",
+        "barcode": "8851959132050",
+        "stock": 90,
+        "image": "assets/products/sprite.jpg",
+        "description": "Sprite lemon-lime soda",
+        "volume": "325ml",
+        "yolo_class_name": "Sprite"
+      }
+    }
+  },
+  "categories": {
+    "chips": {
+      "display_name": "Chips & Snacks",
+      "icon": "🍟",
+      "tax_rate": 0.07
+    },
+    "drinks": {
+      "display_name": "Beverages",
+      "icon": "🥤",
+      "tax_rate": 0.07
+    }
+  },
+  "currency": {
+    "code": "THB",
+    "symbol": "฿",
+    "decimal_places": 2
+  }
+}

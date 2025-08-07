@@ -1,0 +1,233 @@
+{
+  "products": [
+    {
+      "id": "lays-flat-original",
+      "name": "Lay's Flat Original Flavor",
+      "price": 20.0,
+      "category": "chips",
+      "stock": 53,
+      "min_stock": 10,
+      "yolo_class": "Lay's-Flat-Original-Flavor"
+    },
+    {
+      "id": "lays-nori-seaweed",
+      "name": "Lay's Nori Seaweed Flavor",
+      "price": 25.0,
+      "category": "chips",
+      "stock": 43,
+      "min_stock": 10,
+      "yolo_class": "Lay's-Nori-Seaweed-Flavor"
+    },
+    {
+      "id": "lays-ridged-original",
+      "name": "Lay's Ridged Original Flavor",
+      "price": 22.0,
+      "category": "chips",
+      "stock": 40,
+      "min_stock": 10,
+      "yolo_class": "Lay's-Ridged-Original-Flavor"
+    },
+    {
+      "id": "snackjack-original",
+      "name": "Snackjack Original Flavor",
+      "price": 18.0,
+      "category": "chips",
+      "stock": 59,
+      "min_stock": 15,
+      "yolo_class": "Snackjack-Original-Flavor"
+    },
+    {
+      "id": "tasto-japanese-seaweed",
+      "name": "Tasto Japanese Seaweed Flavor",
+      "price": 24.0,
+      "category": "chips",
+      "stock": 35,
+      "min_stock": 10,
+      "yolo_class": "Tasto-Japanese-Seaweed-Flavor"
+    },
+    {
+      "id": "tasto-original",
+      "name": "Tasto Original Flavor",
+      "price": 22.0,
+      "category": "chips",
+      "stock": 40,
+      "min_stock": 10,
+      "yolo_class": "Tasto-Original-Flavor"
+    },
+    {
+      "id": "coca-cola-bottle",
+      "name": "Coca-Cola Bottle",
+      "price": 18.0,
+      "category": "drinks",
+      "stock": 100,
+      "min_stock": 20,
+      "yolo_class": "CocaCola-Bottle"
+    },
+    {
+      "id": "coca-cola-can",
+      "name": "Coca-Cola Can",
+      "price": 14.0,
+      "category": "drinks",
+      "stock": 150,
+      "min_stock": 30,
+      "yolo_class": "CocaCola-Can"
+    },
+    {
+      "id": "crystal-water",
+      "name": "Crystal Drinking Water",
+      "price": 7.0,
+      "category": "drinks",
+      "stock": 200,
+      "min_stock": 50,
+      "yolo_class": "Crystal-Water"
+    },
+    {
+      "id": "fanta-fruit-punch",
+      "name": "Fanta Fruit Punch Flavor",
+      "price": 14.0,
+      "category": "drinks",
+      "stock": 80,
+      "min_stock": 20,
+      "yolo_class": "Fanta-FruitPunch-Flavor"
+    },
+    {
+      "id": "pepsi",
+      "name": "Pepsi",
+      "price": 14.0,
+      "category": "drinks",
+      "stock": 120,
+      "min_stock": 25,
+      "yolo_class": "Pepsi"
+    },
+    {
+      "id": "sprite",
+      "name": "Sprite",
+      "price": 14.0,
+      "category": "drinks",
+      "stock": 90,
+      "min_stock": 20,
+      "yolo_class": "Sprite"
+    }
+  ],
+  "sales": [
+    {
+      "id": "SALE-20250802104635",
+      "payment_id": "31d3b2bd-5304-4613-bfb3-0ec9a6ed83ee",
+      "timestamp": "2025-08-02T10:46:35.977418",
+      "items": [
+        {
+          "product_id": "lays-nori-seaweed",
+          "product_name": "Lay's Nori Seaweed Flavor",
+          "quantity": 1,
+          "price": 25.0,
+          "total": 25.0
+        }
+      ],
+      "subtotal": 25.0,
+      "tax": 1.7500000000000002,
+      "total": 26.75,
+      "payment_method": "qr_code"
+    },
+    {
+      "id": "SALE-20250807152500",
+      "payment_id": "4cfa8ac3-b4ee-4fca-a88a-a627d4b10d97",
+      "timestamp": "2025-08-07T15:25:00.199081",
+      "items": [
+        {
+          "product_id": "snackjack-original",
+          "product_name": "Snackjack Original Flavor",
+          "quantity": 1,
+          "price": 18.0,
+          "total": 18.0
+        }
+      ],
+      "subtotal": 18.0,
+      "tax": 1.2600000000000002,
+      "total": 19.26,
+      "payment_method": "qr_code"
+    },
+    {
+      "id": "SALE-20250807153407",
+      "payment_id": "60a3ce39-8ce9-4f64-b443-466b5637dad6",
+      "timestamp": "2025-08-07T15:34:07.836610",
+      "items": [
+        {
+          "product_id": "lays-nori-seaweed",
+          "product_name": "Lay's Nori Seaweed Flavor",
+          "quantity": 1,
+          "price": 25.0,
+          "total": 25.0
+        }
+      ],
+      "subtotal": 25.0,
+      "tax": 1.7500000000000002,
+      "total": 26.75,
+      "payment_method": "qr_code"
+    }
+  ],
+  "pending_payments": {
+    "31d3b2bd-5304-4613-bfb3-0ec9a6ed83ee": {
+      "payment_id": "31d3b2bd-5304-4613-bfb3-0ec9a6ed83ee",
+      "timestamp": "2025-08-02T10:46:32.552907",
+      "items": [
+        {
+          "product_id": "lays-nori-seaweed",
+          "product_name": "Lay's Nori Seaweed Flavor",
+          "quantity": 1,
+          "price": 25.0,
+          "total": 25.0
+        }
+      ],
+      "subtotal": 25.0,
+      "tax": 1.7500000000000002,
+      "total": 26.75,
+      "status": "completed",
+      "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAa4AAAGuAQAAAADgjt83AAADCElEQVR4nO2cTW7jMAxGH0cCupRv0KPIV+vN7KPkAAHkZQELnIV+ErfAANNmoGZML4LE8YNpgPhEfmIiyheO/OsrFBhmmGGGGWaYYYYZZtgDsFXqAWRhnYB1ygKbB8jt+2lgkIaNxoKqqu6wTk5hEyFeXhTCuwCgqqq6DA3SsNFYbkKxeYjJqciUReaiJRS5GR2kYT8GyyJz2Lt4OC0L0D+6m2FPgPmPJ2Ka0HVKSFyyV8KOxJQfczfDnhNrktHqkvJRE5RzS9gpL4frnuLZDHs0tomIiK+dzfq6A+RbIUJpceahQRo2CGvi0Y8Fp7eWR1VViR8vMi05JVbr09y63ounSAuALptIkZt5ZJCGjcK6luxAUAVcEQ8IO/Vd0Zcd05JzYoeqNPWzQVtaJNqyk6CtPZYlp8TixSMzTonJqS5k0QWnMgdVmX9GkIaNwo5+SRYI76Jl92YTWKerB7JX2H0fWXqKZzPsUdjRB6k1SHVJ2rtWklhdclbsfhcvai9Xw7EJThx7YsuSc2F3ZmtJgYVqu5Z8KefCDjE1P9ay5GzYh4kA6J1wbXnaUmSummHgVDW5urosW295Lm3+aIbuvj3Zsxn2TeygJW1nj5iqTV8vKv5aNd5MS06H3Y2R3NWntcehFrMlaQDLknNivROu9WnVjXTb8jOH3rC7LLmvS4A2WtL1BTAtOSfWvVdXJqF1nd0uhKsXglPY/F5Xm5CQuIwI0rDB2CfvtW7q7fcis/R9P/NLTok1Ldn6WFpQYJvK3CtNUBBwuxBGBGnYz8BiN8zeJhApE42HzmYZHqRho7CP3mstYUtP3KpXWmNsPc65sVpvQBkf2Dz6NrkyWlJnYQH7Beg5sd7jZA/hWj+sM0JM2WsZLdkECFebLzkp9ulXW0CpVFmnpEJISizZkRFC+s7dDPtfsGKjvdd/H4gXX/f4VnnRP2BfvJthz4AdXDUy1OlFp8VVW193JCaQqFlsxTkn9qnH6ZXqbR6ptjfJ2azaSbGbPPzNYf/RaJhhhhlmmGGGGWbYCOw3bqPNTq4WL64AAAAASUVORK5CYII="
+    },
+    "4cfa8ac3-b4ee-4fca-a88a-a627d4b10d97": {
+      "payment_id": "4cfa8ac3-b4ee-4fca-a88a-a627d4b10d97",
+      "timestamp": "2025-08-07T15:24:51.913098",
+      "items": [
+        {
+          "product_id": "snackjack-original",
+          "product_name": "Snackjack Original Flavor",
+          "quantity": 1,
+          "price": 18.0,
+          "total": 18.0
+        }
+      ],
+      "subtotal": 18.0,
+      "tax": 1.2600000000000002,
+      "total": 19.26,
+      "status": "completed",
+      "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAa4AAAGuAQAAAADgjt83AAAC8klEQVR4nO2cS46jMBCGvxojZWlukKPADeZMfTM4Sh+gJbNsCVSz8AOnM6ue9FjIxYrE+YQtlerxVxFRvnEdv75DgWGGGWaYYYYZZphhhr0AWyVdwCGwici8DYiMIDNHXh8bbtKw1phXVdUd2AZkBljvn6ILhwCgqqq6NN2kYY2wId8cA/gPwCsCbgcOZAoHsVheZyhl8yXOZtjPYZuIvo2HiMgA6+hU5p97mmEXxZwyBcgBSORHn2bYlTCnqgFY7zsid1URuSV7WQAmVX3G/u8mDWuLbZJCDBwxZ9XFf4q+3XdYR4glztx0k4Y1wlLtUl874JPfiP4lVUDVTy5xNsNejK0jyLyJsMpNmd5Fkr0ATO+5Om66ScNaYZweRBevqotXZQpOVYOLAklc1eC06CqXOJthr8JqtSxmqn6P6aoufo85azKVuGpW0iGWVLVJj0HXuwLbTQG3Cx5YJa2SlLYWmzSsMZZ9iT/ld6fRjVC8Soo4JNdivqQ3LOclwcVspJJFJt3RJQsp6c6spEes8iXJefiUxxJV2FNLK2mKWUlv2Fe9JH5ZFFddcNFe4p1ZSZdYHXHilb1KLIcXsrQ2WSXcLVbrJbVykgSSlLAUUdZ8SZdYFXGyXqIaE9eoqp2FTjC9pFfsUVUrQwOB7DdCVtqiIZkv6RGr4gxTAMoMwVkdJw8Sqh9f4myGvRrbbpoVkR2RrxNqhzx8vNbZDPtX7GHq2e8ATk/ZNff9yCKb5SU9YqUSBijqakphy0IW1Cwv6RN76OOU7k01NJDvSA0es5IOsadZtcWfegk5o/XngllJh9iXt7Gq/m8lkBTLsYjTJ5bf2vIB4BhYf39AnC8BZHofdsGnZg7rGBps0rDGGGecySnJOSVQN3NSBWQRp0fsyUoWyO/eVOUwqRI2Va1L7C++JE8JRL9RWn5Y9totVlfCpTFczdDXKexZCJmV9IU91ThFUIuTJlN2I5TRNbOS7jCx/2g0zDDDDDPMMMMMM+wy2B8HVGDXuUvwYAAAAABJRU5ErkJggg==",
+      "session_id": "default"
+    },
+    "60a3ce39-8ce9-4f64-b443-466b5637dad6": {
+      "payment_id": "60a3ce39-8ce9-4f64-b443-466b5637dad6",
+      "timestamp": "2025-08-07T15:33:40.207216",
+      "items": [
+        {
+          "product_id": "lays-nori-seaweed",
+          "product_name": "Lay's Nori Seaweed Flavor",
+          "quantity": 1,
+          "price": 25.0,
+          "total": 25.0
+        }
+      ],
+      "subtotal": 25.0,
+      "tax": 1.7500000000000002,
+      "total": 26.75,
+      "status": "completed",
+      "qr_code": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAa4AAAGuAQAAAADgjt83AAADDklEQVR4nO2cS26kMBCGvxpbytJIOUCOAjeYI+Vq+Cg5QEuwjASqWfgBnWSVtOJBrl60oOETZank+utBi/KNz/7nOxQYZphhhhlmmGGGGWbYA7Ao+UMcdgF2EREPcdhFpnQqIjI0NNKwVhiqqqpzUFXVDdXFKQTVdDQurlw433eJtRn2cGwvG0V4F51Xj0xhS5fShSgirY00rA3mP/4QJxDCTWAd0PjyLp+pa6zNsEdhn7wE3EacPMoK8uUdF1mbYQ/HnKouAOwir6pKfNlg1A2dAUZV/Yz9rpGGtcHKTrHWuBJuXuNw8wqgcbiln/P18KOnGXZNLHvJeGwTqwdwmoLN+JZPH/I0w66JnTPcOWxAUIVQ48xyhCJnmXCnWPGSeqRJfjjNkqR6zqhbEifmJd1iQTUVV6d0ugHrU/YXVg9xcKZe+8bGN4/OySNEdCaX6WH1aUNJAaipkYa1wkqcWUhZb9Yl1FOg6JIjKFnE6Qu7r5k5BfaUBBPFqYwzCEEBdi+EpYGRhv0fWBzIjeFpzZ1gUsQBYBUhiodxaWikYa2wT5kNoaYyS72ptIgt4vSJ3WXCC6hWcTIuJEWbVcsxUmBe0hl2CFI+DJScjnK9JH+Zl3SLrR6ZqhCJA0B4F6I8aSnTc6TDl1qbYT/FTrpE51ScL2Nqp7ATtvN9tpf0htV6icseoYu76+gAJ1exPk6XWFWvriqPjSJToDT/cspjXtInds6Ex6JZs7/UdvB4bDcWcXrEau1198r6rJK7N88bcXBp9khh94BD47A0MNKwxtipXlL2EijzJbkJXDIbq5f0it3nLlqEa50vqclPrq9ZxOkYO97tY31SxmXPR/ktnF3yzElLIw1rjeVIUvt5qTss8ro4lanOvaZy28XWZthPsZN6hXCD+HdL72opbB7YReMkQCgjBb9upGGNMc5qpJZYZ0ptZK6lktwLNF1iGOSpkhJixjepvR2be+0V++I/BzjVXks67CzH6Rk710sgx5mj9pqnSigjBVah7xIT+49GwwwzzDDDDDPMMMMug/0Dm1nH+g0ulYUAAAAASUVORK5CYII=",
+      "session_id": "default"
+    }
+  },
+  "settings": {
+    "store_name": "Smart Checkout Store",
+    "tax_rate": 0.07,
+    "currency": "\u0e40\u0e18\u0e1f",
+    "detection_confidence": 0.6,
+    "theme": "dark"
+  }
+}

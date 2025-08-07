@@ -1,0 +1,905 @@
+import sys
+import json
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+import cv2
+import numpy as np
+
+from models.product import Product
+from models.cart import ShoppingCart
+from models.database_manager import DatabaseManager
+from detection.yolo_detector import YOLODetector, VideoStream, DetectionDebouncer
+
+
+class CameraWidget(QWidget):
+    """Widget for displaying camera feed and detections"""
+    
+    products_detected = pyqtSignal(list)  # Emitted when products are detected
+    
+    def __init__(self, detector: YOLODetector, video_stream: VideoStream):
+        super().__init__()
+        self.detector = detector
+        self.video_stream = video_stream
+        self.current_frame = None
+        
+        # UI setup
+        self.setup_ui()
+        
+        # Set widget background
+        self.setStyleSheet("""
+            CameraWidget {
+                background-color: #2A2A2A;
+            }
+        """)
+        
+        # Timer for updating camera feed
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_frame)
+        self.timer.start(30)  # 30ms = ~33 FPS
+    
+    def setup_ui(self):
+        """Setup camera widget UI"""
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Camera display
+        self.camera_label = QLabel()
+        self.camera_label.setMinimumSize(640, 480)
+        self.camera_label.setScaledContents(True)
+        self.camera_label.setStyleSheet("""
+            QLabel {
+                border: 2px solid #4ECDC4;
+                border-radius: 10px;
+                background-color: #2A2A2A;
+            }
+        """)
+        
+        layout.addWidget(self.camera_label)
+        self.setLayout(layout)
+    
+    def capture_and_detect(self):
+        """Capture current frame and detect products"""
+        if self.current_frame is not None:
+            print("Capturing frame for detection...")
+            # Run detection on current frame
+            detections = self.detector.detect(self.current_frame)
+            
+            # Flash effect
+            self.flash_effect()
+            
+            if detections:
+                print(f"Found {len(detections)} products in snapshot")
+                self.products_detected.emit(detections)
+            else:
+                print("No products detected in snapshot")
+            
+            return detections
+        return []
+    
+    def flash_effect(self):
+        """Create camera flash effect"""
+        # White flash overlay
+        white_pixmap = QPixmap(self.camera_label.size())
+        white_pixmap.fill(Qt.white)
+        self.camera_label.setPixmap(white_pixmap)
+        
+        # Return to normal after 100ms
+        QTimer.singleShot(100, self.update_frame)
+    
+    def update_frame(self):
+        """Update camera frame"""
+        ret, frame = self.video_stream.read()
+        if ret and frame is not None:
+            self.current_frame = frame.copy()
+            
+            # Always run detection for visualization
+            detections = self.detector.detect(frame)
+            
+            # Draw detection boxes on frame
+            self.detector.draw_detections(frame, detections)
+            
+            # Convert to Qt format and display
+            rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            h, w, ch = rgb_frame.shape
+            bytes_per_line = ch * w
+            qt_image = QImage(rgb_frame.data, w, h, bytes_per_line, QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(qt_image)
+            
+            # Scale to fit label
+            scaled_pixmap = pixmap.scaled(self.camera_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.camera_label.setPixmap(scaled_pixmap)
+
+
+class CartItemWidget(QWidget):
+    """Custom widget for cart items with delete button"""
+    
+    delete_clicked = pyqtSignal(str)  # product_id
+    
+    def __init__(self, item, parent=None):
+        super().__init__(parent)
+        self.item = item
+        self.setup_ui()
+    
+    def setup_ui(self):
+        # Set widget background
+        self.setStyleSheet("""
+            CartItemWidget {
+                background-color: #3A3A3A;
+                border-radius: 8px;
+                margin: 3px;
+                border: 1px solid #555555;
+            }
+            CartItemWidget:hover {
+                border: 1px solid #FF6B35;
+            }
+        """)
+        
+        layout = QHBoxLayout()
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(10)
+        
+        # Icon label
+        icon_label = QLabel("🛒")
+        icon_label.setStyleSheet("font-size: 20px; background-color: transparent;")
+        layout.addWidget(icon_label)
+        
+        # Item info
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(2)
+        
+        name_label = QLabel(self.item.product.name)
+        name_label.setStyleSheet("color: #FFFFFF; font-size: 15px; font-weight: bold; background-color: transparent;")
+        
+        detail_label = QLabel(f"฿{self.item.product.price:.2f} × {self.item.quantity} = ฿{self.item.subtotal:.2f}")
+        detail_label.setStyleSheet("color: #FF6B35; font-size: 14px; background-color: transparent;")
+        
+        info_layout.addWidget(name_label)
+        info_layout.addWidget(detail_label)
+        
+        # Delete button
+        delete_btn = QPushButton("🗑️")
+        delete_btn.setFixedSize(32, 32)
+        delete_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #F44336;
+                color: white;
+                border-radius: 16px;
+                font-size: 16px;
+            }
+            QPushButton:hover {
+                background-color: #D32F2F;
+            }
+            QPushButton:pressed {
+                background-color: #B71C1C;
+            }
+        """)
+        delete_btn.clicked.connect(lambda: self.delete_clicked.emit(self.item.product.id))
+        
+        layout.addLayout(info_layout)
+        layout.addStretch()
+        layout.addWidget(delete_btn)
+        
+        self.setLayout(layout)
+
+
+class CartWidget(QWidget):
+    """Widget for displaying shopping cart"""
+    
+    checkout_clicked = pyqtSignal()
+    
+    def __init__(self, cart: ShoppingCart):
+        super().__init__()
+        self.cart = cart
+        self.setup_ui()
+        
+        # Set widget background
+        self.setStyleSheet("""
+            CartWidget {
+                background-color: #2A2A2A;
+            }
+        """)
+        
+        # Show initial empty state
+        self.update_cart_display()
+    
+    def setup_ui(self):
+        """Setup cart widget UI"""
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Title
+        title = QLabel("Your Cart")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("""
+            QLabel {
+                font-size: 24px;
+                font-weight: bold;
+                color: #FFFFFF;
+                padding: 10px;
+                background-color: transparent;
+            }
+        """)
+        layout.addWidget(title)
+        
+        # Cart items label
+        items_label = QLabel("Cart Items:")
+        items_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #FF6B35;
+                padding: 5px;
+                background-color: transparent;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(items_label)
+        
+        # Cart items list
+        self.items_widget = QWidget()
+        self.items_widget.setStyleSheet("background-color: #2A2A2A;")
+        self.items_layout = QVBoxLayout()
+        self.items_layout.setSpacing(5)
+        self.items_layout.setContentsMargins(5, 5, 5, 5)
+        self.items_widget.setLayout(self.items_layout)
+        
+        # Scroll area for items
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(self.items_widget)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setMinimumHeight(200)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                background-color: #2A2A2A;
+                border: 2px solid #FF6B35;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QScrollBar:vertical {
+                background-color: #3A3A3A;
+                width: 12px;
+                border-radius: 6px;
+                margin: 2px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #FF6B35;
+                border-radius: 6px;
+                min-height: 30px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #FF5722;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+        """)
+        layout.addWidget(scroll_area, 1)  # Give it stretch factor
+        
+        # Summary section
+        summary_widget = QWidget()
+        summary_layout = QVBoxLayout()
+        summary_widget.setStyleSheet("""
+            QWidget {
+                background-color: #2A2A2A;
+                border: 1px solid #FF6B35;
+                border-radius: 10px;
+                padding: 10px;
+            }
+        """)
+        
+        # Subtotal
+        self.subtotal_label = QLabel("Subtotal: ฿0.00")
+        self.subtotal_label.setStyleSheet("font-size: 18px; color: #FFFFFF;")
+        summary_layout.addWidget(self.subtotal_label)
+        
+        # Tax
+        self.tax_label = QLabel("Tax: ฿0.00")
+        self.tax_label.setStyleSheet("font-size: 18px; color: #FF6B35;")
+        summary_layout.addWidget(self.tax_label)
+        
+        # Total
+        self.total_label = QLabel("Total: ฿0.00")
+        self.total_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #FFFFFF;")
+        summary_layout.addWidget(self.total_label)
+        
+        summary_widget.setLayout(summary_layout)
+        layout.addWidget(summary_widget)
+        
+        # Pay button
+        self.pay_button = QPushButton("Pay!")
+        self.pay_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FF6B35;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                padding: 15px;
+                border-radius: 10px;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #FF5722;
+            }
+            QPushButton:pressed {
+                background-color: #E64A19;
+            }
+        """)
+        self.pay_button.clicked.connect(self.checkout_clicked.emit)
+        layout.addWidget(self.pay_button)
+        
+        self.setLayout(layout)
+    
+    def update_cart_display(self):
+        """Update cart display with current items"""
+        # Clear existing items
+        while self.items_layout.count():
+            child = self.items_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        # Add cart items
+        for item in self.cart.get_items():
+            item_widget = CartItemWidget(item)
+            item_widget.delete_clicked.connect(self.on_delete_item)
+            self.items_layout.addWidget(item_widget)
+        
+        # Add empty state if no items
+        if len(self.cart) == 0:
+            empty_label = QLabel("Your cart is empty\nScan products to add them")
+            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setStyleSheet("""
+                QLabel {
+                    color: #666666;
+                    font-size: 14px;
+                    padding: 20px;
+                    background-color: transparent;
+                }
+            """)
+            self.items_layout.addWidget(empty_label)
+        
+        # Add stretch at the end
+        self.items_layout.addStretch()
+        
+        # Update summary
+        summary = self.cart.get_summary()
+        self.subtotal_label.setText(f"Subtotal: ฿{summary['subtotal']:.2f}")
+        self.tax_label.setText(f"Tax: ฿{summary['tax']:.2f}")
+        self.total_label.setText(f"Total: ฿{summary['total']:.2f}")
+    
+    def on_delete_item(self, product_id):
+        """Handle item deletion"""
+        self.cart.remove_product(product_id)
+        self.update_cart_display()
+
+
+class DetectedItemWidget(QWidget):
+    """Custom widget for detected items with delete button"""
+    
+    delete_clicked = pyqtSignal(int)  # index
+    
+    def __init__(self, product, index, parent=None):
+        super().__init__(parent)
+        self.product = product
+        self.index = index
+        self.setup_ui()
+    
+    def setup_ui(self):
+        # Set widget background
+        self.setStyleSheet("""
+            DetectedItemWidget {
+                background-color: #3A3A3A;
+                border-radius: 8px;
+                margin: 3px;
+                border: 1px solid #555555;
+            }
+            DetectedItemWidget:hover {
+                border: 1px solid #4ECDC4;
+            }
+        """)
+        
+        layout = QHBoxLayout()
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(10)
+        
+        # Icon label
+        icon_label = QLabel("📦")
+        icon_label.setStyleSheet("font-size: 20px; background-color: transparent;")
+        layout.addWidget(icon_label)
+        
+        # Item info
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(2)
+        
+        name_label = QLabel(self.product.name)
+        name_label.setStyleSheet("color: #FFFFFF; font-size: 15px; font-weight: bold; background-color: transparent;")
+        
+        price_label = QLabel(f"฿{self.product.price:.2f}")
+        price_label.setStyleSheet("color: #4ECDC4; font-size: 14px; background-color: transparent;")
+        
+        info_layout.addWidget(name_label)
+        info_layout.addWidget(price_label)
+        
+        # Delete button
+        delete_btn = QPushButton("✕")
+        delete_btn.setFixedSize(28, 28)
+        delete_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #F44336;
+                color: white;
+                border-radius: 14px;
+                font-size: 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #D32F2F;
+            }
+            QPushButton:pressed {
+                background-color: #B71C1C;
+            }
+        """)
+        delete_btn.clicked.connect(lambda: self.delete_clicked.emit(self.index))
+        
+        layout.addLayout(info_layout)
+        layout.addStretch()
+        layout.addWidget(delete_btn)
+        
+        self.setLayout(layout)
+
+
+class ScannerWidget(QWidget):
+    """Central scanner widget with scan button and detected items"""
+    
+    add_to_cart_clicked = pyqtSignal()
+    scan_clicked = pyqtSignal()
+    
+    def __init__(self):
+        super().__init__()
+        self.detected_products = []
+        self.setup_ui()
+        
+        # Set widget background
+        self.setStyleSheet("""
+            ScannerWidget {
+                background-color: #2A2A2A;
+            }
+        """)
+        
+        # Show initial empty state
+        self.refresh_display()
+    
+    def setup_ui(self):
+        """Setup scanner widget UI"""
+        layout = QVBoxLayout()
+        layout.setSpacing(10)
+        layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Title
+        title = QLabel("Scanner")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("""
+            QLabel {
+                font-size: 24px;
+                font-weight: bold;
+                color: #FFFFFF;
+                padding: 10px;
+                background-color: transparent;
+            }
+        """)
+        layout.addWidget(title)
+        
+        # Scan button
+        self.scan_button = QPushButton("📷 Scan!")
+        self.scan_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4ECDC4;
+                color: white;
+                font-size: 28px;
+                font-weight: bold;
+                padding: 20px;
+                border-radius: 15px;
+                border: none;
+                margin: 5px;
+            }
+            QPushButton:hover {
+                background-color: #45B7AA;
+            }
+            QPushButton:pressed {
+                background-color: #3A9B8F;
+            }
+        """)
+        self.scan_button.clicked.connect(self.scan_clicked.emit)
+        layout.addWidget(self.scan_button)
+        
+        # Detected items label
+        detected_label = QLabel("Detected Items:")
+        detected_label.setStyleSheet("""
+            QLabel {
+                font-size: 16px;
+                color: #4ECDC4;
+                padding: 5px;
+                background-color: transparent;
+                font-weight: bold;
+            }
+        """)
+        layout.addWidget(detected_label)
+        
+        # Detected items widget
+        self.detected_widget = QWidget()
+        self.detected_widget.setStyleSheet("background-color: #2A2A2A;")
+        self.detected_layout = QVBoxLayout()
+        self.detected_layout.setSpacing(5)
+        self.detected_layout.setContentsMargins(5, 5, 5, 5)
+        self.detected_widget.setLayout(self.detected_layout)
+        
+        # Scroll area for detected items
+        scroll_area = QScrollArea()
+        scroll_area.setWidget(self.detected_widget)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setMinimumHeight(200)
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                background-color: #2A2A2A;
+                border: 2px solid #4ECDC4;
+                border-radius: 10px;
+                padding: 5px;
+            }
+            QScrollBar:vertical {
+                background-color: #3A3A3A;
+                width: 12px;
+                border-radius: 6px;
+                margin: 2px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #4ECDC4;
+                border-radius: 6px;
+                min-height: 30px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #45B7AA;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                border: none;
+                background: none;
+            }
+        """)
+        layout.addWidget(scroll_area, 1)  # Give it stretch factor
+        
+        # Add button
+        self.add_button = QPushButton("➕ Add to Cart")
+        self.add_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FF6B35;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                padding: 15px;
+                border-radius: 10px;
+                border: none;
+                margin: 5px;
+            }
+            QPushButton:hover {
+                background-color: #FF5722;
+            }
+            QPushButton:pressed {
+                background-color: #E64A19;
+            }
+            QPushButton:disabled {
+                background-color: #666666;
+                color: #999999;
+            }
+        """)
+        self.add_button.clicked.connect(self.add_to_cart_clicked.emit)
+        self.add_button.setEnabled(False)
+        layout.addWidget(self.add_button)
+        
+        self.setLayout(layout)
+    
+    def add_detected_product(self, product: Product):
+        """Add detected product to list"""
+        # Check if product is already in the list
+        for existing_product in self.detected_products:
+            if existing_product.id == product.id:
+                print(f"Product {product.name} already in detected list")
+                return
+        
+        self.detected_products.append(product)
+        
+        # Create item widget
+        index = len(self.detected_products) - 1
+        item_widget = DetectedItemWidget(product, index)
+        item_widget.delete_clicked.connect(self.on_delete_item)
+        self.detected_layout.addWidget(item_widget)
+        
+        self.add_button.setEnabled(True)
+        print(f"Added to detected list: {product.name}")
+    
+    def on_delete_item(self, index):
+        """Handle item deletion"""
+        if 0 <= index < len(self.detected_products):
+            removed_product = self.detected_products.pop(index)
+            print(f"Removed from detected list: {removed_product.name}")
+            
+            # Rebuild the display
+            self.refresh_display()
+    
+    def refresh_display(self):
+        """Refresh the detected items display"""
+        # Clear existing widgets
+        while self.detected_layout.count():
+            child = self.detected_layout.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
+        
+        # If no products, show empty state
+        if not self.detected_products:
+            empty_label = QLabel("No items detected\nClick 📷 Scan to detect products")
+            empty_label.setAlignment(Qt.AlignCenter)
+            empty_label.setStyleSheet("""
+                QLabel {
+                    color: #666666;
+                    font-size: 14px;
+                    padding: 20px;
+                    background-color: transparent;
+                }
+            """)
+            self.detected_layout.addWidget(empty_label)
+        else:
+            # Re-add all items
+            for index, product in enumerate(self.detected_products):
+                item_widget = DetectedItemWidget(product, index)
+                item_widget.delete_clicked.connect(self.on_delete_item)
+                self.detected_layout.addWidget(item_widget)
+        
+        # Add stretch at the end
+        self.detected_layout.addStretch()
+        
+        # Update add button state
+        self.add_button.setEnabled(len(self.detected_products) > 0)
+    
+    def clear_detected(self):
+        """Clear detected products"""
+        self.detected_products.clear()
+        self.refresh_display()
+        print("Cleared detected products")
+
+
+class DarkMessageBox(QMessageBox):
+    """Custom dark-themed message box"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setStyleSheet("""
+            QMessageBox {
+                background-color: #3A3A3A;
+                color: #FFFFFF;
+            }
+            QMessageBox QLabel {
+                color: #FFFFFF;
+                font-size: 16px;
+            }
+            QMessageBox QPushButton {
+                background-color: #FF6B35;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 5px;
+                font-size: 14px;
+                min-width: 80px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #FF5722;
+            }
+            QMessageBox QPushButton:pressed {
+                background-color: #E64A19;
+            }
+        """)
+
+
+class MainWindow(QMainWindow):
+    """Main application window"""
+    
+    def __init__(self):
+        super().__init__()
+        
+        # Load settings
+        with open('config/settings.json', 'r') as f:
+            self.settings = json.load(f)
+        
+        # Initialize components
+        self.db_manager = DatabaseManager()
+        self.cart = ShoppingCart()
+        
+        # Initialize detection system
+        model_paths = {
+            'chips': 'trained_models/chips_model.pt',
+            'drinks': 'trained_models/drinks_model.pt'
+        }
+        self.detector = YOLODetector(model_paths, conf_threshold=self.settings['detection']['confidence_threshold'])
+        
+        # Initialize camera
+        if self.settings['camera']['use_ip_camera']:
+            camera_source = self.settings['camera']['ip_camera_url']
+        else:
+            camera_source = self.settings['camera']['default_source']
+        
+        self.video_stream = VideoStream(camera_source)
+        
+        # Setup UI
+        self.setup_ui()
+        
+        # Connect signals
+        self.connect_signals()
+        
+        # Apply settings
+        self.apply_settings()
+    
+    def setup_ui(self):
+        """Setup main window UI"""
+        self.setWindowTitle(self.settings['app']['name'])
+        
+        # Central widget
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        
+        # Main layout
+        main_layout = QHBoxLayout()
+        main_layout.setSpacing(20)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        
+        # Left side - Camera
+        self.camera_widget = CameraWidget(self.detector, self.video_stream)
+        main_layout.addWidget(self.camera_widget, 2)
+        
+        # Center - Scanner controls
+        self.scanner_widget = ScannerWidget()
+        self.scanner_widget.setMaximumWidth(350)
+        main_layout.addWidget(self.scanner_widget, 1)
+        
+        # Right side - Cart
+        self.cart_widget = CartWidget(self.cart)
+        self.cart_widget.setMaximumWidth(400)
+        main_layout.addWidget(self.cart_widget, 1)
+        
+        central_widget.setLayout(main_layout)
+        
+        # Accessibility button (top-left corner)
+        self.accessibility_btn = QPushButton("🔧 🌐")
+        self.accessibility_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FF6B35;
+                color: white;
+                font-size: 18px;
+                padding: 10px;
+                border-radius: 20px;
+                border: 2px solid #FFFFFF;
+            }
+        """)
+        self.accessibility_btn.setFixedSize(80, 40)
+        self.accessibility_btn.move(20, 20)
+        self.accessibility_btn.setParent(central_widget)
+    
+    def connect_signals(self):
+        """Connect widget signals"""
+        # Camera detection
+        self.camera_widget.products_detected.connect(self.on_products_detected)
+        
+        # Scanner controls
+        self.scanner_widget.scan_clicked.connect(self.on_scan_clicked)
+        self.scanner_widget.add_to_cart_clicked.connect(self.on_add_to_cart)
+        
+        # Cart
+        self.cart_widget.checkout_clicked.connect(self.on_checkout)
+    
+    def apply_settings(self):
+        """Apply settings to window"""
+        # Window size - fixed at 1240x720
+        self.setFixedSize(1240, 720)
+        
+        # Style
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {self.settings['ui']['colors']['background']};
+            }}
+            QWidget {{
+                color: {self.settings['ui']['colors']['text']};
+                font-size: {self.settings['ui']['font_size']['medium']}px;
+            }}
+        """)
+    
+    def on_scan_clicked(self):
+        """Handle scan button click - take a snapshot"""
+        print("Taking snapshot...")
+        # Clear previous detections
+        self.scanner_widget.clear_detected()
+        
+        # Capture and detect
+        detections = self.camera_widget.capture_and_detect()
+    
+    def on_products_detected(self, detections):
+        """Handle detected products from snapshot"""
+        for detection in detections:
+            print(f"Product detected: {detection['class_name']}")
+            
+            # Look up product in database
+            product_data = self.db_manager.get_product_by_yolo_class(detection['class_name'])
+            
+            if product_data:
+                print(f"Found product in database: {product_data['name']}")
+                # Create Product object
+                product = Product(
+                    id=product_data['id'],
+                    name=product_data['name'],
+                    price=product_data['price'],
+                    category=product_data['category'],
+                    barcode=product_data.get('barcode'),
+                    stock=product_data.get('stock', 0),
+                    image=product_data.get('image'),
+                    description=product_data.get('description'),
+                    weight=product_data.get('weight'),
+                    volume=product_data.get('volume'),
+                    yolo_class_name=product_data.get('yolo_class_name')
+                )
+                
+                # Add to scanner widget
+                self.scanner_widget.add_detected_product(product)
+            else:
+                print(f"Product not found in database: {detection['class_name']}")
+    
+    def on_add_to_cart(self):
+        """Add detected products to cart"""
+        print(f"Adding {len(self.scanner_widget.detected_products)} products to cart")
+        
+        for product in self.scanner_widget.detected_products:
+            if self.cart.add_product(product):
+                print(f"Added {product.name} to cart")
+            else:
+                msg = DarkMessageBox()
+                msg.setIcon(QMessageBox.Warning)
+                msg.setWindowTitle("Out of Stock")
+                msg.setText(f"{product.name} is out of stock!")
+                msg.exec_()
+        
+        # Update cart display
+        self.cart_widget.update_cart_display()
+        
+        # Clear detected products
+        self.scanner_widget.clear_detected()
+    
+    def on_checkout(self):
+        """Handle checkout"""
+        if len(self.cart) == 0:
+            msg = DarkMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setWindowTitle("Empty Cart")
+            msg.setText("Your cart is empty!")
+            msg.exec_()
+            return
+        
+        # Show payment dialog
+        summary = self.cart.get_summary()
+        msg = DarkMessageBox()
+        msg.setIcon(QMessageBox.Question)
+        msg.setWindowTitle("Confirm Payment")
+        msg.setText(f"Total: ฿{summary['total']:.2f}\n\nProceed with payment?")
+        msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        
+        reply = msg.exec_()
+        
+        if reply == QMessageBox.Yes:
+            # Process payment (placeholder)
+            success_msg = DarkMessageBox()
+            success_msg.setIcon(QMessageBox.Information)
+            success_msg.setWindowTitle("Success")
+            success_msg.setText("Payment successful! Thank you!")
+            success_msg.exec_()
+            
+            # Clear cart
+            self.cart.clear()
+            self.cart_widget.update_cart_display()
+    
+    def closeEvent(self, event):
+        """Clean up on close"""
+        self.video_stream.stop()
+        event.accept()

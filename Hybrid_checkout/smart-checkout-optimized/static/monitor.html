@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitor - Smart Checkout</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1>System Monitor</h1>
+                <nav class="header-nav">
+                    <button class="nav-btn" onclick="window.location.href='/'">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                </nav>
+            </div>
+        </header>
+        <main class="main-content">
+            <div id="systemStatus">Loading...</div>
+        </main>
+    </div>
+    <script>
+        async function updateStatus() {
+            const response = await fetch('/api/system-status');
+            const data = await response.json();
+            document.getElementById('systemStatus').innerHTML = `
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        }
+        setInterval(updateStatus, 5000);
+        updateStatus();
+    </script>
+</body>
+</html>

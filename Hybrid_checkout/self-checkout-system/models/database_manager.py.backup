@@ -1,0 +1,219 @@
+import json
+import os
+from typing import Dict, List, Optional, Any
+from pathlib import Path
+
+
+class DatabaseManager:
+    """Manages JSON database operations for products and categories"""
+    
+    def __init__(self, db_path: str = "database"):
+        """
+        Initialize the database manager
+        
+        Args:
+            db_path: Path to the database directory
+        """
+        self.db_path = Path(db_path)
+        self.products_file = self.db_path / "products.json"
+        self.categories_file = self.db_path / "categories.json"
+        
+        # Cache for loaded data
+        self._products_cache = None
+        self._categories_cache = None
+        
+        # Ensure database directory exists
+        self.db_path.mkdir(exist_ok=True)
+        
+        # Load data into cache
+        self._load_data()
+    
+    def _load_data(self) -> None:
+        """Load JSON data into cache"""
+        try:
+            # Load products
+            if self.products_file.exists():
+                with open(self.products_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self._products_cache = data.get('products', {})
+                    self._categories_cache = data.get('categories', {})
+                    self._currency = data.get('currency', {})
+            else:
+                print(f"Warning: Products file not found at {self.products_file}")
+                self._products_cache = {}
+                self._categories_cache = {}
+                self._currency = {"code": "THB", "symbol": "฿", "decimal_places": 2}
+                
+        except Exception as e:
+            print(f"Error loading database: {e}")
+            self._products_cache = {}
+            self._categories_cache = {}
+    
+    def get_product_by_yolo_class(self, yolo_class_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get product information by YOLO class name
+        
+        Args:
+            yolo_class_name: The YOLO class name detected
+            
+        Returns:
+            Product dictionary or None if not found
+        """
+        for category in self._products_cache.values():
+            for product_id, product in category.items():
+                if product.get('yolo_class_name') == yolo_class_name:
+                    # Add the product_id to the returned dict
+                    product_with_id = product.copy()
+                    product_with_id['id'] = product_id
+                    return product_with_id
+        return None
+    
+    def get_product_by_id(self, product_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get product information by product ID
+        
+        Args:
+            product_id: The product ID
+            
+        Returns:
+            Product dictionary or None if not found
+        """
+        for category in self._products_cache.values():
+            if product_id in category:
+                product = category[product_id].copy()
+                product['id'] = product_id
+                return product
+        return None
+    
+    def get_product_by_barcode(self, barcode: str) -> Optional[Dict[str, Any]]:
+        """
+        Get product information by barcode
+        
+        Args:
+            barcode: The product barcode
+            
+        Returns:
+            Product dictionary or None if not found
+        """
+        for category in self._products_cache.values():
+            for product_id, product in category.items():
+                if product.get('barcode') == barcode:
+                    product_with_id = product.copy()
+                    product_with_id['id'] = product_id
+                    return product_with_id
+        return None
+    
+    def get_all_products(self) -> List[Dict[str, Any]]:
+        """
+        Get all products as a flat list
+        
+        Returns:
+            List of all products with their IDs
+        """
+        products = []
+        for category in self._products_cache.values():
+            for product_id, product in category.items():
+                product_with_id = product.copy()
+                product_with_id['id'] = product_id
+                products.append(product_with_id)
+        return products
+    
+    def get_products_by_category(self, category: str) -> List[Dict[str, Any]]:
+        """
+        Get all products in a specific category
+        
+        Args:
+            category: Category name
+            
+        Returns:
+            List of products in the category
+        """
+        products = []
+        if category in self._products_cache:
+            for product_id, product in self._products_cache[category].items():
+                product_with_id = product.copy()
+                product_with_id['id'] = product_id
+                products.append(product_with_id)
+        return products
+    
+    def get_category_info(self, category: str) -> Optional[Dict[str, Any]]:
+        """
+        Get category information
+        
+        Args:
+            category: Category name
+            
+        Returns:
+            Category information or None
+        """
+        return self._categories_cache.get(category)
+    
+    def get_currency_info(self) -> Dict[str, Any]:
+        """Get currency information"""
+        return self._currency
+    
+    def add_product(self, category: str, product_id: str, product_data: Dict[str, Any]) -> bool:
+        """
+        Add a new product to the database
+        
+        Args:
+            category: Product category
+            product_id: Unique product ID
+            product_data: Product information
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Ensure category exists
+            if category not in self._products_cache:
+                self._products_cache[category] = {}
+            
+            # Add product
+            self._products_cache[category][product_id] = product_data
+            
+            # Save to file
+            return self._save_data()
+            
+        except Exception as e:
+            print(f"Error adding product: {e}")
+            return False
+    
+    def update_product_stock(self, product_id: str, new_stock: int) -> bool:
+        """
+        Update product stock quantity
+        
+        Args:
+            product_id: Product ID
+            new_stock: New stock quantity
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        for category in self._products_cache.values():
+            if product_id in category:
+                category[product_id]['stock'] = new_stock
+                return self._save_data()
+        return False
+    
+    def _save_data(self) -> bool:
+        """Save cache data back to JSON file"""
+        try:
+            data = {
+                'products': self._products_cache,
+                'categories': self._categories_cache,
+                'currency': self._currency
+            }
+            
+            with open(self.products_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error saving database: {e}")
+            return False
+    
+    def reload_data(self) -> None:
+        """Reload data from JSON files"""
+        self._load_data()

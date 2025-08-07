@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management - Smart Checkout</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div>
+                    <h1>Smart Checkout</h1>
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">Inventory Management</span>
+                </div>
+                <nav class="header-nav" style="display: flex; gap: 1rem;">
+                    <button class="nav-btn" onclick="window.location.href='/cart'">
+                        <i class="fas fa-camera"></i>
+                        Checkout
+                    </button>
+                    <button class="nav-btn" onclick="window.location.href='/admin'">
+                        <i class="fas fa-chart-line"></i>
+                        Analytics
+                    </button>
+                </nav>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div style="width: 3.5rem; height: 3.5rem; background: var(--bg-tertiary); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--primary);">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 2rem; font-weight: 600;" id="totalProducts">0</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem;">Total Products</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div style="width: 3.5rem; height: 3.5rem; background: rgba(245, 158, 11, 0.1); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--warning);">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 2rem; font-weight: 600;" id="lowStockCount">0</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem;">Low Stock Alerts</p>
+                    </div>
+                </div>
+                
+                <div class="stat-card">
+                    <div style="width: 3.5rem; height: 3.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--success);">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 2rem; font-weight: 600;" id="todayRevenue">฿0</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem;">Today's Revenue</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; gap: 1.5rem; align-items: center;">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search products...">
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="filter-btn active" data-filter="all" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: 1px solid var(--primary); border-radius: 0.5rem; cursor: pointer;">All</button>
+                    <button class="filter-btn" data-filter="chips" style="padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 0.5rem; cursor: pointer;">Chips</button>
+                    <button class="filter-btn" data-filter="drinks" style="padding: 0.5rem 1rem; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 0.5rem; cursor: pointer;">Drinks</button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="products-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="restockModal" class="modal">
+        <div class="modal-content">
+            <h2>Restock Product</h2>
+            <p id="restockProductName"></p>
+            <input type="number" id="restockQuantity" min="1" placeholder="Quantity to add" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; margin: 1rem 0; background: var(--bg-secondary); color: var(--text-primary);">
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="confirmRestock()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/theme.js"></script>
+    <script src="/static/js/inventory.js"></script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{
+  "app": {
+    "name": "Smart Checkout System",
+    "version": "1.0.0",
+    "language": "en",
+    "debug_mode": false
+  },
+  "display": {
+    "width": 1240,
+    "height": 720,
+    "fullscreen": false,
+    "fps": 30
+  },
+  "detection": {
+    "confidence_threshold": 0.6,
+    "model_input_size": 416,
+    "max_detections": 20,
+    "debounce_time": 1.0
+  },
+  "camera": {
+    "default_source": 1,
+    "ip_camera_url": "http://192.168.1.109:8080/video",
+    "use_ip_camera": false,
+    "resolution": {
+      "width": 640,
+      "height": 480
+    }
+  },
+  "ui": {
+    "theme": "dark",
+    "font_size": {
+      "small": 14,
+      "medium": 18,
+      "large": 24,
+      "extra_large": 32
+    },
+    "colors": {
+      "primary": "#FF6B35",
+      "secondary": "#4ECDC4",
+      "background": "#3A3A3A",
+      "text": "#FFFFFF",
+      "success": "#4CAF50",
+      "error": "#F44336"
+    }
+  },
+  "payment": {
+    "accepted_methods": ["cash", "card", "qr"],
+    "tax_included": false,
+    "receipt_enabled": true
+  },
+  "localization": {
+    "currency": "THB",
+    "date_format": "DD/MM/YYYY",
+    "time_format": "24h"
+  }
+}
